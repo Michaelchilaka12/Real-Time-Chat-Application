@@ -1,0 +1,20 @@
+extends layout
+
+
+block content
+    .auth-wrapper
+        .card
+            h2 Register
+            form(method="POST" action="/api/v1/users/signup")
+                label(for="name") Full name
+                input#name(type="text" name="name" required)
+                label(for="email") Email
+                input#email(type="email" name="email" required)
+                label(for="password") Password
+                input#password(type="password" name="password" required)
+                label(for="passwordConfirm") Password Confirm
+                input#password(type="password" name="passwordConfirm" required)
+                button(type="submit") Create account
+            p
+                | Already have an account?
+                a(href="/login") Sign in

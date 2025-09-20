@@ -1,0 +1,47 @@
+extends ../layout.pug
+
+
+block content
+    .app
+        // left sidebar: conversations & create
+        aside.sidebar
+            .brand
+                h1 ChatApp
+            .search
+                input#searchConvos(type="text" placeholder="Search or start a new chat")
+            ul.convos#convosList
+        //- conversation items rendered server-side or via JS
+        // main area: messages
+        main.chat-area
+            header.chat-header
+                .title
+                    h2#chatTitle Select a conversation
+                    p#chatSubtitle
+                .actions
+                    button#createGroup(type="button") New group
+            section.messages#messages
+                // messages appear here
+                .emptyState
+                    p Select or start a conversation to see messages
+            form.messageBox#messageForm
+                input#messageInput(type="text" placeholder="Type a message..." autocomplete="off")
+                button#sendBtn(type="submit") Send
+        // right sidebar: members, online list
+        aside.info-panel
+            .section
+                h3 Participants
+                ul#membersList
+            .section
+                h3 Details
+                p#chatDetails No conversation selected
+
+
+// small template used by client JS to render message bubbles
+script(type="text/template" id="tpl-message")
+    li.message(data-id="{{id}}" data-sender="{{senderId}}")
+        .meta
+            span.sender {{senderName}}
+            span.time {{time}}
+        .bubble {{text}}
+        if {{seen}}
+            span.seen Seen

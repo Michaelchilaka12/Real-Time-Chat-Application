@@ -1,0 +1,58 @@
+//- views/chat.pug
+doctype html
+html
+  head
+    meta(charset='utf-8')
+    meta(name='viewport' content='width=device-width,initial-scale=1')
+    title Real-Time Chat
+    link(rel='stylesheet', href='/css/chat.css')
+  body
+    .chat-container
+      header.chat-header
+        if user
+          .me
+            img.user-photo(src=user.profilePic || '/images/default-avatar.png' alt=user.name width='40' height='40')
+            span.user-name= user.name
+        else
+          span.user-name Not signed in
+
+      nav.chat-tabs
+        button#private-tab.active(type='button') Private Chats
+        button#group-tab(type='button') Group Chats
+
+      //- PRIVATE CHAT
+      section#private-chat.chat-section
+        aside.users-list
+          a(href='/profilePic') Upload Profile Picture
+          br
+          br
+          a(href='/update') Update your details 
+          h3 Contacts
+          ul#contacts
+        main.chat-box
+          .chat-history#private-history
+          div#private-typing(style="color: gray; font-size: 14px; margin: 5px 0;")
+          .chat-input
+            input#private-message(type='text' placeholder='Type a message...')
+            button#send-private(type='button' disabled) Send
+
+      //- GROUP CHAT
+      section#group-chat.chat-section.hidden
+        aside.groups-list
+          h3 Groups
+          button#create-group-btn(type='button') + Create Group
+          h4 My Groups
+          ul#my-groups
+          h4 All Groups
+          ul#all-groups
+        main.chat-box
+          .chat-history#group-history
+          div#group-typing(style="color: gray; font-size: 14px; margin: 5px 0;")
+          .chat-input
+            input#group-message(type='text' placeholder='Type a message...')
+            button#send-group(type='button' disabled) Send
+
+    script.
+      const CURRENT_USER = !{JSON.stringify(user || {})};
+    script(src='/socket.io/socket.io.js')
+    script(src='/js/chat.js')

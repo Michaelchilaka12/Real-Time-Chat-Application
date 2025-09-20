@@ -1,0 +1,64 @@
+//- views/updateByEmail.pug
+doctype html
+html
+  head
+    meta(charset="utf-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1")
+    title Update User by Email
+    link(rel="stylesheet" href="/css/style.css")
+
+  body
+    .container
+      h1 Update User (by Email)
+
+      //- messages
+      if message
+        p(style="color: green;")= message
+      if error
+        p(style="color: red;")= error
+
+      //- Form: update a single text field
+      form(action="api/v1/users/update" method="POST")
+        //- email used to find the user
+        label(for="email") Email (unique identifier)
+        input#email(type="email" name="email" placeholder="user@example.com" required)
+        br
+
+        //- field to update (you can change the options as needed)
+        label(for="field") Field to update
+        select#field(name="field" required)
+          option(value="" disabled selected) -- choose field --
+          option(value="name") name
+          option(value="profilePic") profilePic
+          
+          //- you can add more fields that exist on your User model
+        br
+
+        //- value for the selected field
+        label(for="value") New value
+        input#value(type="text" name="value" placeholder="New value" required)
+        br
+
+        button(type="submit") Update
+
+      hr
+
+      //- Optional: quick link to profilePic upload (if you want separate upload)
+      p
+        | Need to upload an image instead?
+        a(href="/profilePic") Upload profile picture
+
+    //- optional small script to copy selected field name into placeholder
+    script.
+      // small UX improvement: change placeholder depending on selected field
+      (function(){
+        const fieldEl = document.getElementById('field');
+        const valueEl = document.getElementById('value');
+        fieldEl && fieldEl.addEventListener('change', () => {
+          const f = fieldEl.value;
+          if (!f) { valueEl.placeholder = 'New value'; return; }
+          if (f === 'profilePic') valueEl.placeholder = 'Enter image URL or use upload page';
+          else if (f === 'phone') valueEl.placeholder = 'e.g. +2348012345678';
+          else valueEl.placeholder = 'New value for ' + f;
+        });
+      })();

@@ -1,0 +1,22 @@
+//- views/profilePicUpload.pug
+doctype html
+html
+  head
+    meta(charset='utf-8')
+    meta(name='viewport' content='width=device-width, initial-scale=1')
+    title Upload Profile Picture
+    link(rel='stylesheet', href='/css/style.css')
+  body
+    .container
+      h1 Upload Profile Picture
+
+      if message
+        p(style="color: green;")= message
+      if error
+        p(style="color: red;")= error
+
+      form(action=`/api/v1/users/${user._id}/uploadProfilePic` method='POST' enctype='multipart/form-data')
+        label(for='profilePic') Select profile picture:
+        input(type='file' name='profilePic' accept='image/*' required)
+        br
+        button(type='submit') Upload

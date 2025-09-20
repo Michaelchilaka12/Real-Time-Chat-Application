@@ -1,0 +1,17 @@
+Features to include:
+
+User registration & login
+
+One-on-one and group chats
+
+Online/offline status tracking
+
+Real-time messaging with Socket.IO
+
+Chat history saved in DB
+
+Typing indicators & message seen status
+
+Stack: Express.js + Socket.IO + MongoDB/Redis
+
+Extra: Add JWT auth with sockets for security.
