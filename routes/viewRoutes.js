@@ -5,6 +5,9 @@ const authController = require('../controllers/authController');
 
 
 //public pages 
+router.get("/", (req,res) =>{
+    res.redirect("/signup");
+})
 router.get("/signup",authController.renderSignup);
 router.get("/login", authController.renderLogin);
 router.get("/chat",authController.isLoggedIn,authController.renderChat)
