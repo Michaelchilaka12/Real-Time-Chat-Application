@@ -1,20 +1,88 @@
 extends layout
 
-
 block content
-    .auth-wrapper
-        .card
-            h2 Register
-            form(method="POST" action="/api/v1/users/signup")
-                label(for="name") Full name
-                input#name(type="text" name="name" required)
-                label(for="email") Email
-                input#email(type="email" name="email" required)
-                label(for="password") Password
-                input#password(type="password" name="password" required)
-                label(for="passwordConfirm") Password Confirm
-                input#password(type="password" name="passwordConfirm" required)
-                button(type="submit") Create account
-            p
-                | Already have an account?
-                a(href="/login") Sign in
+  style.
+    .signup-container {
+      font-family: Arial, sans-serif;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      width: 350px;
+      margin: 3rem auto;
+    }
+    .signup-container h1 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      color: #333;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      margin: 10px 0 5px;
+      font-weight: bold;
+      color: #555;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      outline: none;
+      font-size: 14px;
+    }
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="password"]:focus {
+      border-color: #007bff;
+    }
+    button {
+      margin-top: 20px;
+      padding: 12px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .login-link {
+      margin-top: 1rem;
+      text-align: center;
+      font-size: 14px;
+    }
+    .login-link a {
+      color: #007bff;
+      text-decoration: none;
+    }
+    .login-link a:hover {
+      text-decoration: underline;
+    }
+
+  .signup-container
+    h1 Signup
+    form(method="POST" action="/api/v1/users/signup")
+      label(for="name") Full Name
+      input#name(type="text" name="name" required)
+
+      label(for="email") Email
+      input#email(type="email" name="email" required)
+
+      label(for="password") Password
+      input#password(type="password" name="password" required)
+
+      label(for="passwordConfirm") Confirm Password
+      input#passwordConfirm(type="password" name="passwordConfirm" required)
+
+      button(type="submit") Signup
+
+    .login-link
+      | Already have an account? 
+      a(href="/login") Sign in
