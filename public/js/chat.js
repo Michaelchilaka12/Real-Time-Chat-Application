@@ -243,25 +243,96 @@ function renderMessage(msg, containerEl) {
 }
 
 // --- Long press detection (works on desktop + mobile) ---
+// --- Long press detection (desktop + mobile) ---
 function enableLongPress(bubble, msg) {
   let pressTimer;
 
   const start = (e) => {
     e.preventDefault();
-    pressTimer = setTimeout(() => showMessageOptions(bubble, msg), 800); // ~0.8s hold
+    pressTimer = setTimeout(() => {
+      showMessageOptions(bubble, msg);
+    }, 800); // 0.8s hold
   };
+
   const cancel = () => clearTimeout(pressTimer);
 
   // Desktop
-  bubble.addEventListener('mousedown', start);
-  bubble.addEventListener('mouseup', cancel);
-  bubble.addEventListener('mouseleave', cancel);
+  bubble.addEventListener("mousedown", start);
+  bubble.addEventListener("mouseup", cancel);
+  bubble.addEventListener("mouseleave", cancel);
 
   // Mobile
-  bubble.addEventListener('touchstart', start);
-  bubble.addEventListener('touchend', cancel);
-  bubble.addEventListener('touchmove', cancel);
+  bubble.addEventListener("touchstart", start, { passive: false });
+  bubble.addEventListener("touchend", cancel);
+  bubble.addEventListener("touchcancel", cancel);
+  bubble.addEventListener("touchmove", cancel);
 }
+
+// --- Show options for edit/delete ---
+function showMessageOptions(bubble, msg) {
+  // Remove old menu if any
+  const old = document.querySelector(".msg-options");
+  if (old) old.remove();
+
+  const now = Date.now();
+  const sentAt = new Date(bubble.dataset.timestamp).getTime();
+  const within30 = (now - sentAt) <= (30 * 60 * 1000);
+
+  const menu = document.createElement("div");
+  menu.className = "msg-options";
+  menu.style.position = "absolute";
+  menu.style.background = "#fff";
+  menu.style.border = "1px solid #ccc";
+  menu.style.padding = "6px";
+  menu.style.borderRadius = "6px";
+  menu.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";
+  menu.style.zIndex = 1000;
+
+  const rect = bubble.getBoundingClientRect();
+  menu.style.top = `${rect.bottom + window.scrollY}px`;
+  menu.style.left = `${rect.left + window.scrollX}px`;
+
+  // --- Edit ---
+  if (within30) {
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "✏️ Edit Message";
+    editBtn.onclick = () => {
+      const newText = prompt("Edit your message:", msg.text);
+      if (newText && newText.trim()) {
+        socket.emit("edit_message", { msgId: msg._id, newText });
+      }
+      menu.remove();
+    };
+    menu.appendChild(editBtn);
+  }
+
+  // --- Delete ---
+  const deleteBtn = document.createElement("button");
+  deleteBtn.textContent = "🗑️ Delete Message";
+  deleteBtn.onclick = () => {
+    if (confirm("Delete this message?")) {
+      socket.emit("delete_message", { msgId: msg._id });
+    }
+    menu.remove();
+  };
+  menu.appendChild(deleteBtn);
+
+  document.body.appendChild(menu);
+
+  // --- Close menu when tapping/clicking outside ---
+  const closeMenu = (e) => {
+    if (!menu.contains(e.target)) {
+      menu.remove();
+      document.removeEventListener("click", closeMenu);
+      document.removeEventListener("touchstart", closeMenu);
+    }
+  };
+  setTimeout(() => { // prevent closing immediately after open
+    document.addEventListener("click", closeMenu);
+    document.addEventListener("touchstart", closeMenu);
+  }, 200);
+}
+
 
 // --- Show options for edit/delete ---
 function showMessageOptions(bubble, msg) {
