@@ -299,6 +299,7 @@ exports.renderChat = (req,res) =>{
     res.render("chat")
 }
 
+
 exports.renderProfile = (req,res) =>{
     res.render("profilePic")
 }

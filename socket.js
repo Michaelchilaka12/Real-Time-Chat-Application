@@ -8,7 +8,7 @@ const onlineUsers = new Map(); // userId -> { sockets: Set(socketId), name, phot
 function socketHandler(io) {
   io.on('connection', (socket) => {
     console.log('⚡ socket connected', socket.id);
-
+    
     // --- send groups on demand ---
     socket.on('request_groups', async () => {
       const groups = await Group.find().lean();

@@ -1,64 +1,133 @@
-//- views/updateByEmail.pug
-doctype html
-html
-  head
-    meta(charset="utf-8")
-    meta(name="viewport" content="width=device-width, initial-scale=1")
-    title Update User by Email
-    link(rel="stylesheet" href="/css/style.css")
+extends layout
 
-  body
-    .container
-      h1 Update User (by Email)
+block content
+  style.
+    .auth-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #f8f9fa;
+    }
 
-      //- messages
+    .card {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      width: 420px;
+      text-align: center;
+    }
+
+    .card h2 {
+      margin-bottom: 1.5rem;
+      color: #333;
+      font-size: 22px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+    }
+
+    label {
+      margin: 10px 0 5px;
+      font-weight: bold;
+      color: #555;
+    }
+
+    input, select {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      font-size: 14px;
+      width: 100%;
+    }
+
+    button {
+      padding: 12px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    p {
+      margin-top: 1rem;
+      font-size: 14px;
+    }
+
+    p[style*="color: green;"] {
+      color: green !important;
+    }
+
+    p[style*="color: red;"] {
+      color: red !important;
+    }
+
+  .auth-wrapper
+    .card
+      h2 Update User (by Email)
+
       if message
         p(style="color: green;")= message
       if error
         p(style="color: red;")= error
 
-      //- Form: update a single text field
-      form(action="api/v1/users/update" method="POST")
-        //- email used to find the user
+      form(action="/api/v1/users/update" method="POST" enctype="multipart/form-data")
         label(for="email") Email (unique identifier)
         input#email(type="email" name="email" placeholder="user@example.com" required)
-        br
 
-        //- field to update (you can change the options as needed)
         label(for="field") Field to update
         select#field(name="field" required)
           option(value="" disabled selected) -- choose field --
           option(value="name") name
           option(value="profilePic") profilePic
-          
-          //- you can add more fields that exist on your User model
-        br
+          //- Add more fields if needed
 
-        //- value for the selected field
+        //- text input for most fields
         label(for="value") New value
         input#value(type="text" name="value" placeholder="New value" required)
-        br
+
+        //- file input for profilePic (hidden by default)
+        input#profilePicUpload(type="file" name="profilePic" accept="image/*" style="display:none;")
 
         button(type="submit") Update
 
-      hr
-
-      //- Optional: quick link to profilePic upload (if you want separate upload)
       p
-        | Need to upload an image instead?
+        | Need to upload an image instead? 
         a(href="/profilePic") Upload profile picture
 
-    //- optional small script to copy selected field name into placeholder
-    script.
-      // small UX improvement: change placeholder depending on selected field
-      (function(){
-        const fieldEl = document.getElementById('field');
-        const valueEl = document.getElementById('value');
-        fieldEl && fieldEl.addEventListener('change', () => {
+  script.
+    (function(){
+      const fieldEl = document.getElementById('field');
+      const valueEl = document.getElementById('value');
+      const fileEl = document.getElementById('profilePicUpload');
+
+      if(fieldEl){
+        fieldEl.addEventListener('change', () => {
           const f = fieldEl.value;
-          if (!f) { valueEl.placeholder = 'New value'; return; }
-          if (f === 'profilePic') valueEl.placeholder = 'Enter image URL or use upload page';
-          else if (f === 'phone') valueEl.placeholder = 'e.g. +2348012345678';
-          else valueEl.placeholder = 'New value for ' + f;
+          if(f === 'profilePic'){
+            valueEl.style.display = 'none';
+            fileEl.style.display = 'block';
+            valueEl.required = false;
+            fileEl.required = true;
+          } else {
+            valueEl.style.display = 'block';
+            fileEl.style.display = 'none';
+            valueEl.required = true;
+            fileEl.required = false;
+          }
         });
-      })();
+      }
+    })();

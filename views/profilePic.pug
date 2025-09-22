@@ -1,14 +1,86 @@
-//- views/profilePicUpload.pug
-doctype html
-html
-  head
-    meta(charset='utf-8')
-    meta(name='viewport' content='width=device-width, initial-scale=1')
-    title Upload Profile Picture
-    link(rel='stylesheet', href='/css/style.css')
-  body
-    .container
-      h1 Upload Profile Picture
+extends layout
+
+block content
+  style.
+    .auth-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #f8f9fa;
+    }
+
+    .card {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      width: 380px;
+      text-align: center;
+    }
+
+    .card h2 {
+      margin-bottom: 1.5rem;
+      color: #333;
+      font-size: 24px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    label {
+      margin: 10px 0 5px;
+      font-weight: bold;
+      color: #555;
+      align-self: flex-start;
+    }
+
+    input[type="file"] {
+      margin: 10px 0;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      width: 100%;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 12px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      width: 100%;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    p {
+      margin-top: 1rem;
+      font-size: 14px;
+    }
+
+    p[style*="color: green;"] {
+      color: green !important;
+    }
+
+    p[style*="color: red;"] {
+      color: red !important;
+    }
+
+  .auth-wrapper
+    .card
+      h2 Upload Profile Picture
 
       if message
         p(style="color: green;")= message
@@ -18,5 +90,4 @@ html
       form(action=`/api/v1/users/${user._id}/uploadProfilePic` method='POST' enctype='multipart/form-data')
         label(for='profilePic') Select profile picture:
         input(type='file' name='profilePic' accept='image/*' required)
-        br
         button(type='submit') Upload

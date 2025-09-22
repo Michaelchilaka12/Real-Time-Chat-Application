@@ -317,3 +317,29 @@ body {
     overflow-x: auto;
   }
 }
+
+.status-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-left: 8px;
+}
+
+.status-dot.online {
+  background-color: #28a745; /* green */
+}
+
+.status-dot.offline {
+  background-color: #dc3545; /* red */
+}
+.status-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-left: 8px;
+}
+
+.status-dot.online { background-color: #28a745; }  /* green */
+.status-dot.offline { background-color: #dc3545; } /* red */

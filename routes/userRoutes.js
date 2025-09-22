@@ -20,7 +20,7 @@ router.use(authController.protect)
 router.get('/logout',authController.logout);
 
 router.post("/:id/uploadProfilePic", upload.single("profilePic"), userController.uploadfilePic);
-router.post("/update",userController.updateFieldByEmail)
+router.post("/update",upload.single("profilePic"),userController.updateFieldByEmail)
 
 
 

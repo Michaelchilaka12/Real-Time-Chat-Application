@@ -59,28 +59,50 @@ exports.uploadfilePic = async (req, res) => {
 
 
 
-exports.updateFieldByEmail= async(req,res) =>{
+exports.updateFieldByEmail = async (req, res) => {
   try {
-    const updatedUser = await User.findOneAndUpdate(
-  { email: req.body.email },
-  { [req.body.field]: req.body.value },
-  { new: true, runValidators: false }
-);
+    const { email, field, value } = req.body;
 
-    if (!updatedUser) {
-       res.status(201).render("signup-success", {
-      title: "Profile updated",
-      message: "Your Profile updated successfully!.",
-    });
+    console.log("Email:", email);
+    console.log("Field:", field);
+    console.log("Value:", value);
+    console.log("File:", req.file);
+
+    if (!email) {
+      return res.status(400).send("Email is required");
     }
 
-     res.status(201).render("signup-success", {
+    let updateData = {};
+
+    // ✅ If the field is profilePic, use the uploaded file
+    if (field === "profilePic") {
+      if (!req.file) {
+        return res.status(400).send("Please upload a profile picture");
+      }
+      updateData.profilePic = req.file.path; // Cloudinary URL
+    } else {
+      updateData[field] = value;
+    }
+
+    const updatedUser = await User.findOneAndUpdate(
+      { email },
+      { $set: updateData },
+      { new: true, runValidators: false }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).render("signup-success", {
+        title: "Error",
+        message: "User not found.",
+      });
+    }
+
+    res.status(201).render("signup-success", {
       title: "Profile updated",
       message: "Your Profile updated successfully!.",
     });
   } catch (err) {
     console.error("Error updating user:", err.message);
-    throw err;
+    res.status(500).send("Server error");
   }
-}
-
+};
