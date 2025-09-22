@@ -149,6 +149,32 @@ socket.on('create_group', async ({ name }) => {
       socket.to(roomId).emit('typing', { userId, username });
     });
 
+    // server.js
+socket.on("edit_message", async ({ messageId, newText }) => {
+  const msg = await Message.findById(messageId);
+  if (!msg) return;
+
+  const isSender = String(msg.sender) === String(socket.user._id);
+  const within30min = (Date.now() - msg.createdAt.getTime()) <= 30 * 60 * 1000;
+
+  if (isSender && within30min) {
+    msg.text = newText;
+    await msg.save();
+    io.to(msg.roomId).emit("message_edited", msg);
+  }
+});
+
+socket.on("delete_message", async ({ messageId }) => {
+  const msg = await Message.findById(messageId);
+  if (!msg) return;
+
+  if (String(msg.sender) === String(socket.user._id)) {
+    await msg.deleteOne();
+    io.to(msg.roomId).emit("message_deleted", { messageId });
+  }
+});
+
+
     // --- disconnect cleanup ---
     socket.on('disconnect', async () => {
       try {

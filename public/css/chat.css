@@ -343,3 +343,25 @@ body {
 
 .status-dot.online { background-color: #28a745; }  /* green */
 .status-dot.offline { background-color: #dc3545; } /* red */
+
+.msg-menu {
+  position: absolute;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 6px;
+  display: flex;
+  gap: 6px;
+  z-index: 100;
+}
+.msg-menu button {
+  padding: 4px 8px;
+  border: none;
+  background: #f5f5f5;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 13px;
+}
+.msg-menu button:hover {
+  background: #eee;
+}

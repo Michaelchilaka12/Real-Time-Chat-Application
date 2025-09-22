@@ -227,8 +227,86 @@ function renderMessage(msg, containerEl) {
   const bubble = document.createElement('div');
   bubble.className = 'msg-bubble ' + (isMe ? 'me-bubble' : 'other-bubble');
   bubble.textContent = msg.text || '';
-  wrapper.appendChild(bubble);
+  bubble.dataset.msgid = msg._id; // Keep track of message ID
+  bubble.dataset.timestamp = msg.createdAt || Date.now();
 
+  // 👇 Long press detection for edit/delete
+  if (isMe) {
+    let pressTimer;
+    bubble.addEventListener('mousedown', () => {
+      pressTimer = setTimeout(() => showMessageOptions(bubble, msg), 5000); // 5 sec hold
+    });
+    bubble.addEventListener('mouseup', () => clearTimeout(pressTimer));
+    bubble.addEventListener('mouseleave', () => clearTimeout(pressTimer));
+  }
+
+  wrapper.appendChild(bubble);
   containerEl.appendChild(wrapper);
   containerEl.scrollTop = containerEl.scrollHeight;
 }
+
+// --- Show options for edit/delete ---
+function showMessageOptions(bubble, msg) {
+  const now = Date.now();
+  const sentAt = new Date(bubble.dataset.timestamp).getTime();
+  const diffMinutes = (now - sentAt) / (1000 * 60);
+
+  const menu = document.createElement('div');
+  menu.className = 'msg-options';
+  menu.style.position = 'absolute';
+  menu.style.background = '#fff';
+  menu.style.border = '1px solid #ccc';
+  menu.style.padding = '5px';
+  menu.style.zIndex = 1000;
+
+  const rect = bubble.getBoundingClientRect();
+  menu.style.top = rect.bottom + 'px';
+  menu.style.left = rect.left + 'px';
+
+  // Edit option (only if within 30 mins)
+  if (diffMinutes <= 30) {
+    const editBtn = document.createElement('button');
+    editBtn.textContent = 'Edit Message';
+    editBtn.onclick = () => {
+      const newText = prompt('Edit your message:', msg.text);
+      if (newText && newText.trim()) {
+        socket.emit('edit_message', { msgId: msg._id, newText });
+      }
+      document.body.removeChild(menu);
+    };
+    menu.appendChild(editBtn);
+  }
+
+  // Delete option
+  const deleteBtn = document.createElement('button');
+  deleteBtn.textContent = 'Delete Message';
+  deleteBtn.onclick = () => {
+    if (confirm('Delete this message?')) {
+      socket.emit('delete_message', { msgId: msg._id });
+    }
+    document.body.removeChild(menu);
+  };
+  menu.appendChild(deleteBtn);
+
+  document.body.appendChild(menu);
+
+  // Close on click elsewhere
+  document.addEventListener('click', function handler(e) {
+    if (!menu.contains(e.target)) {
+      document.body.removeChild(menu);
+      document.removeEventListener('click', handler);
+    }
+  });
+}
+
+// --- Listen for edits & deletes ---
+socket.on("message_edited", (msg) => {
+  const bubble = document.querySelector(`[data-id="${msg._id}"] .msg-bubble`);
+  if (bubble) bubble.textContent = msg.text + " (edited)";
+});
+
+socket.on("message_deleted", ({ messageId }) => {
+  const wrapper = document.querySelector(`[data-id="${messageId}"]`);
+  if (wrapper) wrapper.remove();
+});
+
