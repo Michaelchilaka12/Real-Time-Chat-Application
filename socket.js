@@ -8,7 +8,7 @@ const onlineUsers = new Map(); // userId -> { sockets: Set(socketId), name, phot
 function socketHandler(io) {
   io.on('connection', (socket) => {
     console.log('⚡ socket connected', socket.id);
-    
+
     // --- send groups on demand ---
     socket.on('request_groups', async () => {
       const groups = await Group.find().lean();
@@ -26,13 +26,23 @@ function socketHandler(io) {
         socket.userProfilePic = userObj.profilePic || '';
 
         if (!onlineUsers.has(uid)) {
-          onlineUsers.set(uid, { sockets: new Set(), name: socket.userName, profilePic: socket.userProfilePic });
+          onlineUsers.set(uid, {
+            sockets: new Set(),
+            name: socket.userName,
+            profilePic: socket.userProfilePic,
+          });
         }
         onlineUsers.get(uid).sockets.add(socket.id);
 
-        try { await User.findByIdAndUpdate(uid, { online: true }).exec(); } catch (e) {}
+        try {
+          await User.findByIdAndUpdate(uid, { online: true }).exec();
+        } catch (e) {}
 
-        const onlineArr = Array.from(onlineUsers.entries()).map(([k, v]) => ({ _id: k, name: v.name, profilePic: v.profilePic }));
+        const onlineArr = Array.from(onlineUsers.entries()).map(([k, v]) => ({
+          _id: k,
+          name: v.name,
+          profilePic: v.profilePic,
+        }));
         io.emit('online_users', onlineArr);
 
         const groups = await Group.find().lean();
@@ -64,32 +74,27 @@ function socketHandler(io) {
     });
 
     // --- create group ---
-socket.on('create_group', async ({ name }) => {
-  try {
-    if (!name || !socket.userId) return;
+    socket.on('create_group', async ({ name }) => {
+      try {
+        if (!name || !socket.userId) return;
 
-    // create group with current user as member
-    const newGroup = await Group.create({
-      name: name.trim(),
-      members: [socket.userId],
-      createdBy: socket.userId
+        const newGroup = await Group.create({
+          name: name.trim(),
+          members: [socket.userId],
+          createdBy: socket.userId,
+        });
+
+        const groups = await Group.find().lean();
+        io.emit('groups_list', groups);
+
+        socket.emit('create_group_success', newGroup);
+
+        console.log(`✅ Group created: ${newGroup.name} by ${socket.userId}`);
+      } catch (err) {
+        console.error('create_group error', err);
+        socket.emit('error_message', 'Failed to create group');
+      }
     });
-
-    // refresh groups for everyone
-    const groups = await Group.find().lean();
-    io.emit('groups_list', groups);
-
-    // notify creator only
-    socket.emit('create_group_success', newGroup);
-
-    console.log(`✅ Group created: ${newGroup.name} by ${socket.userId}`);
-  } catch (err) {
-    console.error('create_group error', err);
-    socket.emit('error_message', 'Failed to create group');
-  }
-});
-
-
 
     // --- join group ---
     socket.on('join_group', async ({ groupId }) => {
@@ -99,7 +104,7 @@ socket.on('create_group', async ({ name }) => {
         const group = await Group.findById(groupId);
         if (!group) return socket.emit('error_message', 'Group not found');
 
-        if (!group.members.some(m => String(m) === String(socket.userId))) {
+        if (!group.members.some((m) => String(m) === String(socket.userId))) {
           group.members.push(socket.userId);
           await group.save();
         }
@@ -131,7 +136,7 @@ socket.on('create_group', async ({ name }) => {
         const newMessage = await Message.create({
           roomId,
           sender: socket.userId,
-          text: text.trim()
+          text: text.trim(),
         });
 
         const populated = await Message.findById(newMessage._id)
@@ -149,48 +154,46 @@ socket.on('create_group', async ({ name }) => {
       socket.to(roomId).emit('typing', { userId, username });
     });
 
-    // server.js
-// --- edit message ---
-socket.on("edit_message", async ({ msgId, newText }) => {
-  try {
-    const msg = await Message.findById(msgId);
-    if (!msg) return;
+    // --- edit message ---
+    socket.on('edit_message', async ({ msgId, newText }) => {
+      try {
+        const msg = await Message.findById(msgId);
+        if (!msg) return;
 
-    const isSender = String(msg.sender) === String(socket.userId);
-    const within30min = (Date.now() - msg.createdAt.getTime()) <= (30 * 60 * 1000);
+        const isSender = String(msg.sender) === String(socket.userId);
+        const within30min =
+          Date.now() - msg.createdAt.getTime() <= 30 * 60 * 1000;
 
-    if (isSender && within30min) {
-      msg.text = newText.trim();
-      await msg.save();
+        if (isSender && within30min) {
+          msg.text = newText.trim();
+          await msg.save();
 
-      const populated = await Message.findById(msg._id)
-        .populate('sender', 'name profilePic')
-        .lean();
+          const populated = await Message.findById(msg._id)
+            .populate('sender', 'name profilePic')
+            .lean();
 
-      io.to(msg.roomId).emit("message_edited", populated);
-    }
-  } catch (err) {
-    console.error("edit_message error", err);
-  }
-});
+          io.to(msg.roomId).emit('message_edited', populated);
+        }
+      } catch (err) {
+        console.error('edit_message error', err);
+      }
+    });
 
-// --- delete message ---
-socket.on("delete_message", async ({ msgId }) => {
-  try {
-    const msg = await Message.findById(msgId);
-    if (!msg) return;
+    // --- delete message ---
+    socket.on('delete_message', async ({ msgId }) => {
+      try {
+        const msg = await Message.findById(msgId);
+        if (!msg) return;
 
-    const isSender = String(msg.sender) === String(socket.userId);
-    if (isSender) {
-      await msg.deleteOne();
-      io.to(msg.roomId).emit("message_deleted", { msgId });
-    }
-  } catch (err) {
-    console.error("delete_message error", err);
-  }
-});
-
-
+        const isSender = String(msg.sender) === String(socket.userId);
+        if (isSender) {
+          await msg.deleteOne();
+          io.to(msg.roomId).emit('message_deleted', { msgId });
+        }
+      } catch (err) {
+        console.error('delete_message error', err);
+      }
+    });
 
     // --- disconnect cleanup ---
     socket.on('disconnect', async () => {
@@ -201,12 +204,20 @@ socket.on("delete_message", async ({ msgId }) => {
             info.sockets.delete(socket.id);
             if (info.sockets.size === 0) {
               onlineUsers.delete(socket.userId);
-              try { await User.findByIdAndUpdate(socket.userId, { online: false }).exec(); } catch (e) {}
+              try {
+                await User.findByIdAndUpdate(socket.userId, {
+                  online: false,
+                }).exec();
+              } catch (e) {}
             } else {
               onlineUsers.set(socket.userId, info);
             }
           }
-          const onlineArr = Array.from(onlineUsers.entries()).map(([k, v]) => ({ _id: k, name: v.name, profilePic: v.profilePic }));
+          const onlineArr = Array.from(onlineUsers.entries()).map(([k, v]) => ({
+            _id: k,
+            name: v.name,
+            profilePic: v.profilePic,
+          }));
           io.emit('online_users', onlineArr);
         }
         console.log('❌ socket disconnected', socket.id);
