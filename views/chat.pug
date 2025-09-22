@@ -5,7 +5,7 @@ html
     meta(charset='utf-8')
     meta(name='viewport' content='width=device-width,initial-scale=1')
     title Real-Time Chat
-    link(rel='stylesheet', href='/css/chat.css')
+    //- link(rel='stylesheet', href='/css/chat.css')
 
     // Internal CSS
     style.
@@ -159,6 +159,11 @@ html
         from { opacity: 0; transform: scale(0.95); }
         to { opacity: 1; transform: scale(1); }
       }
+    script.
+          document.addEventListener("touchstart", (e) => {
+          console.log("Touched:", e.target);
+        }, { passive: false });
+
 
 
   body
