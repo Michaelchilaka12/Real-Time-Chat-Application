@@ -45,6 +45,8 @@ groupTab.addEventListener('click', () => {
   currentMode = 'group';
 });
 
+
+
 // --- Announce online & request groups ---
 if (CURRENT_USER && CURRENT_USER._id) {
   socket.emit('user_online', {
@@ -210,11 +212,13 @@ createGroupBtn.addEventListener('click', () => {
 });
 
 // --- Render a message ---
+// --- Render a message ---
 function renderMessage(msg, containerEl) {
   const isMe = String(msg.sender && (msg.sender._id || msg.sender)) === String(CURRENT_USER._id);
 
   const wrapper = document.createElement('div');
   wrapper.className = 'message-row ' + (isMe ? 'me' : 'other');
+  wrapper.dataset.msgid = msg._id; // ✅ track on wrapper
 
   if (!isMe) {
     const avatar = document.createElement('img');
@@ -227,17 +231,10 @@ function renderMessage(msg, containerEl) {
   const bubble = document.createElement('div');
   bubble.className = 'msg-bubble ' + (isMe ? 'me-bubble' : 'other-bubble');
   bubble.textContent = msg.text || '';
-  bubble.dataset.msgid = msg._id; // Keep track of message ID
   bubble.dataset.timestamp = msg.createdAt || Date.now();
 
-  // 👇 Long press detection for edit/delete
   if (isMe) {
-    let pressTimer;
-    bubble.addEventListener('mousedown', () => {
-      pressTimer = setTimeout(() => showMessageOptions(bubble, msg), 5000); // 5 sec hold
-    });
-    bubble.addEventListener('mouseup', () => clearTimeout(pressTimer));
-    bubble.addEventListener('mouseleave', () => clearTimeout(pressTimer));
+    enableLongPress(bubble, msg); // ✅ handle long press
   }
 
   wrapper.appendChild(bubble);
@@ -245,11 +242,36 @@ function renderMessage(msg, containerEl) {
   containerEl.scrollTop = containerEl.scrollHeight;
 }
 
+// --- Long press detection (works on desktop + mobile) ---
+function enableLongPress(bubble, msg) {
+  let pressTimer;
+
+  const start = (e) => {
+    e.preventDefault();
+    pressTimer = setTimeout(() => showMessageOptions(bubble, msg), 800); // ~0.8s hold
+  };
+  const cancel = () => clearTimeout(pressTimer);
+
+  // Desktop
+  bubble.addEventListener('mousedown', start);
+  bubble.addEventListener('mouseup', cancel);
+  bubble.addEventListener('mouseleave', cancel);
+
+  // Mobile
+  bubble.addEventListener('touchstart', start);
+  bubble.addEventListener('touchend', cancel);
+  bubble.addEventListener('touchmove', cancel);
+}
+
 // --- Show options for edit/delete ---
 function showMessageOptions(bubble, msg) {
+  // Remove old menu if any
+  const old = document.querySelector('.msg-options');
+  if (old) old.remove();
+
   const now = Date.now();
   const sentAt = new Date(bubble.dataset.timestamp).getTime();
-  const diffMinutes = (now - sentAt) / (1000 * 60);
+  const within30 = (now - sentAt) <= (30 * 60 * 1000);
 
   const menu = document.createElement('div');
   menu.className = 'msg-options';
@@ -260,53 +282,60 @@ function showMessageOptions(bubble, msg) {
   menu.style.zIndex = 1000;
 
   const rect = bubble.getBoundingClientRect();
-  menu.style.top = rect.bottom + 'px';
-  menu.style.left = rect.left + 'px';
+  menu.style.top = `${rect.bottom + window.scrollY}px`;
+  menu.style.left = `${rect.left + window.scrollX}px`;
 
-  // Edit option (only if within 30 mins)
-  if (diffMinutes <= 30) {
+  // Edit
+  if (within30) {
     const editBtn = document.createElement('button');
-    editBtn.textContent = 'Edit Message';
+    editBtn.textContent = '✏️ Edit Message';
     editBtn.onclick = () => {
       const newText = prompt('Edit your message:', msg.text);
       if (newText && newText.trim()) {
         socket.emit('edit_message', { msgId: msg._id, newText });
       }
-      document.body.removeChild(menu);
+      menu.remove();
     };
     menu.appendChild(editBtn);
   }
 
-  // Delete option
+  // Delete
   const deleteBtn = document.createElement('button');
-  deleteBtn.textContent = 'Delete Message';
+  deleteBtn.textContent = '🗑️ Delete Message';
   deleteBtn.onclick = () => {
     if (confirm('Delete this message?')) {
       socket.emit('delete_message', { msgId: msg._id });
     }
-    document.body.removeChild(menu);
+    menu.remove();
   };
   menu.appendChild(deleteBtn);
 
   document.body.appendChild(menu);
 
-  // Close on click elsewhere
-  document.addEventListener('click', function handler(e) {
+  // Close when clicking outside
+  const closeMenu = (e) => {
     if (!menu.contains(e.target)) {
-      document.body.removeChild(menu);
-      document.removeEventListener('click', handler);
+      menu.remove();
+      document.removeEventListener('click', closeMenu);
+      document.removeEventListener('touchstart', closeMenu);
     }
-  });
+  };
+  document.addEventListener('click', closeMenu);
+  document.addEventListener('touchstart', closeMenu);
 }
 
 // --- Listen for edits & deletes ---
 socket.on("message_edited", (msg) => {
-  const bubble = document.querySelector(`[data-id="${msg._id}"] .msg-bubble`);
-  if (bubble) bubble.textContent = msg.text + " (edited)";
+  const wrapper = document.querySelector(`[data-msgid="${msg._id}"]`);
+  if (wrapper) {
+    const bubble = wrapper.querySelector('.msg-bubble');
+    if (bubble) bubble.textContent = msg.text + " (edited)";
+  }
 });
 
-socket.on("message_deleted", ({ messageId }) => {
-  const wrapper = document.querySelector(`[data-id="${messageId}"]`);
+socket.on("message_deleted", ({ msgId }) => {
+  const wrapper = document.querySelector(`[data-msgid="${msgId}"]`);
   if (wrapper) wrapper.remove();
 });
+
 

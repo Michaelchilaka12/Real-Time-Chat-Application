@@ -150,29 +150,46 @@ socket.on('create_group', async ({ name }) => {
     });
 
     // server.js
-socket.on("edit_message", async ({ messageId, newText }) => {
-  const msg = await Message.findById(messageId);
-  if (!msg) return;
+// --- edit message ---
+socket.on("edit_message", async ({ msgId, newText }) => {
+  try {
+    const msg = await Message.findById(msgId);
+    if (!msg) return;
 
-  const isSender = String(msg.sender) === String(socket.user._id);
-  const within30min = (Date.now() - msg.createdAt.getTime()) <= 30 * 60 * 1000;
+    const isSender = String(msg.sender) === String(socket.userId);
+    const within30min = (Date.now() - msg.createdAt.getTime()) <= (30 * 60 * 1000);
 
-  if (isSender && within30min) {
-    msg.text = newText;
-    await msg.save();
-    io.to(msg.roomId).emit("message_edited", msg);
+    if (isSender && within30min) {
+      msg.text = newText.trim();
+      await msg.save();
+
+      const populated = await Message.findById(msg._id)
+        .populate('sender', 'name profilePic')
+        .lean();
+
+      io.to(msg.roomId).emit("message_edited", populated);
+    }
+  } catch (err) {
+    console.error("edit_message error", err);
   }
 });
 
-socket.on("delete_message", async ({ messageId }) => {
-  const msg = await Message.findById(messageId);
-  if (!msg) return;
+// --- delete message ---
+socket.on("delete_message", async ({ msgId }) => {
+  try {
+    const msg = await Message.findById(msgId);
+    if (!msg) return;
 
-  if (String(msg.sender) === String(socket.user._id)) {
-    await msg.deleteOne();
-    io.to(msg.roomId).emit("message_deleted", { messageId });
+    const isSender = String(msg.sender) === String(socket.userId);
+    if (isSender) {
+      await msg.deleteOne();
+      io.to(msg.roomId).emit("message_deleted", { msgId });
+    }
+  } catch (err) {
+    console.error("delete_message error", err);
   }
 });
+
 
 
     // --- disconnect cleanup ---
